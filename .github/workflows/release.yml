@@ -1,10 +1,16 @@
 name: Release builds
 
+permissions:
+  contents: write
+
 on:
   workflow_dispatch:
   push:
     tags:
       - "v*"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -12,35 +18,42 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
+      fail-fast: false
       matrix:
         include:
           - name: windows-x86_64
             os: windows-latest
+            target: x86_64-pc-windows-msvc
             artifact: roflow-windows-x86_64.exe
-            binary: target/release/roflow.exe
+            binary: target/x86_64-pc-windows-msvc/release/roflow.exe
 
           - name: linux-x86_64
             os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
             artifact: roflow-linux-x86_64
-            binary: target/release/roflow
+            binary: target/x86_64-unknown-linux-gnu/release/roflow
 
           - name: macos-x86_64
             os: macos-13
+            target: x86_64-apple-darwin
             artifact: roflow-macos-x86_64
-            binary: target/release/roflow
+            binary: target/x86_64-apple-darwin/release/roflow
 
           - name: macos-aarch64
             os: macos-latest
+            target: aarch64-apple-darwin
             artifact: roflow-macos-aarch64
-            binary: target/release/roflow
+            binary: target/aarch64-apple-darwin/release/roflow
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Build
-        run: cargo build --release
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Rename binary
         shell: bash
